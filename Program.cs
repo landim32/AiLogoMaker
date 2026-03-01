@@ -80,11 +80,15 @@ Console.WriteLine("\n--- PHASE 1: Generating logos with AI ---");
 Console.WriteLine("  (This may take a few minutes...)\n");
 
 var chatGptService = new ChatGPTService(apiKey, promptsDir);
-var logos = await chatGptService.GenerateLogosAsync(userPrompt, brandName, selectedStyle, selectedRules, outputDir);
-
-if (logos.Count == 0)
+List<AiLogoMaker.Models.LogoResult> logos;
+try
 {
-    Console.WriteLine("\nERROR: No logos were generated.");
+    logos = await chatGptService.GenerateLogosAsync(userPrompt, brandName, selectedStyle, selectedRules, outputDir);
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"\n  ERROR: {ex.Message}");
+    Console.WriteLine("\n  Generation aborted.");
     return;
 }
 

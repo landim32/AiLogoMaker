@@ -43,25 +43,18 @@ public class ChatGPTService
             Console.WriteLine();
             Console.WriteLine($"  Generating: {fileName}...");
 
-            try
-            {
-                var imageBytes = await GenerateImageAsync(prompt, size);
-                await File.WriteAllBytesAsync(filePath, imageBytes);
+            var imageBytes = await GenerateImageAsync(prompt, size);
+            await File.WriteAllBytesAsync(filePath, imageBytes);
 
-                results.Add(new LogoResult
-                {
-                    Name = fileName,
-                    FilePath = filePath,
-                    Variant = variant,
-                    Prompt = prompt
-                });
-
-                Console.WriteLine($"  OK: {fileName}");
-            }
-            catch (Exception ex)
+            results.Add(new LogoResult
             {
-                Console.WriteLine($"  ERROR generating {fileName}: {ex.Message}");
-            }
+                Name = fileName,
+                FilePath = filePath,
+                Variant = variant,
+                Prompt = prompt
+            });
+
+            Console.WriteLine($"  OK: {fileName}");
         }
 
         return results;
@@ -82,7 +75,7 @@ public class ChatGPTService
         var options = new ImageGenerationOptions
         {
             Size = parsedSize,
-            Quality = GeneratedImageQuality.High
+            Quality = new GeneratedImageQuality("high")
         };
 
         var result = await _client.GenerateImageAsync(prompt, options);
