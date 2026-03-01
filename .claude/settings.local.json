@@ -6,7 +6,13 @@
       "WebFetch(domain:platform.openai.com)",
       "Bash(dotnet new:*)",
       "Bash(dotnet add:*)",
-      "Bash(dotnet build:*)"
+      "Bash(dotnet build:*)",
+      "Bash(cp:*)",
+      "Bash(rm:*)",
+      "Bash(mv:*)",
+      "Bash(xargs grep -i \"outputformat\\\\|ResponseFormat\\\\|output_format\")",
+      "Bash(xargs grep:*)",
+      "Bash(xargs dotnet-script:*)"
     ]
   }
 }

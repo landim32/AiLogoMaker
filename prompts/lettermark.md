@@ -1,34 +1,34 @@
-# Lettermark (Monograma)
+# Lettermark (Monogram)
 
-## Descrição
-Um lettermark usa as iniciais ou uma única letra da marca para criar um símbolo tipográfico compacto e memorável. Exemplos: IBM, HBO, CNN, HP, Louis Vuitton (LV).
+## Description
+A lettermark uses the brand's initials or a single letter to create a compact and memorable typographic symbol. Examples: IBM, HBO, CNN, HP, Louis Vuitton (LV).
 
-## Diretrizes para o Prompt
+## Prompt Guidelines
 
-### Estrutura
-- Composto por 1 a 4 letras (iniciais da marca)
-- As letras podem se entrelaçar, sobrepor ou combinar de forma criativa
-- Deve funcionar como um símbolo independente
+### Structure
+- Composed of 1 to 4 letters (brand initials)
+- Letters can intertwine, overlap, or combine creatively
+- Must work as a standalone symbol
 
-### Tipografia
-- Fonte customizada ou fortemente estilizada
-- Pode usar serifas, sans-serif ou display
-- Ligaduras entre letras são encorajadas
-- Considere sobreposições parciais para criar unidade visual
-- Peso tipográfico deve transmitir solidez e confiança
+### Typography
+- Custom or heavily stylized font
+- Can use serif, sans-serif, or display typefaces
+- Ligatures between letters are encouraged
+- Consider partial overlaps to create visual unity
+- Typographic weight must convey solidity and trust
 
-### Composição
-- Proporção preferencialmente quadrada ou circular
-- Simetria ou equilíbrio assimétrico intencional
-- Pode incluir um container geométrico (círculo, quadrado, escudo)
-- Espaço negativo pode criar formas ocultas
+### Composition
+- Preferably square or circular proportion
+- Symmetry or intentional asymmetric balance
+- May include a geometric container (circle, square, shield)
+- Negative space can create hidden shapes
 
-### Boas Práticas
-- Extremamente legível mesmo em tamanhos muito pequenos (favicon)
-- Funcionar em uma única cor
-- As letras devem ser reconhecíveis individualmente
-- Criar uma marca de identidade forte com poucas letras
-- Versatilidade: funcionar sozinho ou acompanhado do nome completo
+### Best Practices
+- Extremely legible even at very small sizes (favicon)
+- Work in a single color
+- Letters must be individually recognizable
+- Create a strong identity mark with few letters
+- Versatility: work alone or alongside the full name
 
-### Instruções para IA
-Crie um lettermark profissional usando as iniciais fornecidas. O monograma deve ser elegante, compacto e criar uma unidade visual coesa. As letras devem interagir entre si de forma harmoniosa. Design em fundo transparente.
+### AI Instructions
+Create a professional lettermark using the provided initials. The monogram must be elegant, compact, and create a cohesive visual unit. The letters must interact harmoniously with each other. Design on a transparent background.

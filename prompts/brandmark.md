@@ -1,40 +1,40 @@
-# Brandmark (Símbolo / Ícone)
+# Brandmark (Symbol / Icon)
 
-## Descrição
-Um brandmark é um símbolo ou ícone que representa a marca sem usar texto. É a forma mais pura de identidade visual. Exemplos: Apple (maçã), Nike (swoosh), Twitter/X (pássaro), Target (alvo).
+## Description
+A brandmark is a symbol or icon that represents the brand without using text. It is the purest form of visual identity. Examples: Apple (apple), Nike (swoosh), Twitter/X (bird), Target (bullseye).
 
-## Diretrizes para o Prompt
+## Prompt Guidelines
 
-### Estrutura
-- Símbolo visual puro, sem texto
-- Deve comunicar a essência da marca em uma única forma
-- Pode ser abstrato, figurativo ou uma combinação
-- Simplicidade é fundamental
+### Structure
+- Pure visual symbol, no text
+- Must communicate the brand's essence in a single shape
+- Can be abstract, figurative, or a combination
+- Simplicity is key
 
 ### Design
-- Formas geométricas limpas e precisas
-- Linhas claras e definidas
-- Pode usar espaço negativo de forma criativa
-- Simetria ou assimetria intencional
-- Silhueta reconhecível instantaneamente
+- Clean and precise geometric shapes
+- Clear and defined lines
+- Can creatively use negative space
+- Intentional symmetry or asymmetry
+- Instantly recognizable silhouette
 
-### Tipos de Brandmark
-- **Abstrato**: Formas geométricas que evocam conceitos (ex: Pepsi, Adidas)
-- **Figurativo**: Representação estilizada de um objeto real (ex: Apple, Shell)
-- **Espaço negativo**: Forma criada pelo espaço vazio (ex: FedEx seta)
+### Types of Brandmark
+- **Abstract**: Geometric shapes that evoke concepts (e.g., Pepsi, Adidas)
+- **Figurative**: Stylized representation of a real object (e.g., Apple, Shell)
+- **Negative space**: Shape created by empty space (e.g., FedEx arrow)
 
-### Composição
-- Proporção quadrada ideal para versatilidade
-- Peso visual centralizado
-- Funcionar em qualquer orientação quando aplicável
-- Escalar perfeitamente de 16px a outdoor
+### Composition
+- Ideal square proportion for versatility
+- Centered visual weight
+- Work in any orientation when applicable
+- Scale perfectly from 16px to billboard
 
-### Boas Práticas
-- Reconhecível em milissegundos
-- Funcionar em uma única cor
-- Memorável após uma única visualização
-- Não depender de cor para comunicar significado
-- Funcionar como favicon, app icon e marca d'água
+### Best Practices
+- Recognizable in milliseconds
+- Work in a single color
+- Memorable after a single viewing
+- Not depend on color to communicate meaning
+- Work as favicon, app icon, and watermark
 
-### Instruções para IA
-Crie um brandmark/símbolo profissional e icônico. O design deve ser simples, memorável e instantaneamente reconhecível. Use formas geométricas limpas. O símbolo deve comunicar a essência do conceito fornecido. Design em fundo transparente.
+### AI Instructions
+Create a professional and iconic brandmark/symbol. The design must be simple, memorable, and instantly recognizable. Use clean geometric shapes. The symbol must communicate the essence of the provided concept. Design on a transparent background.

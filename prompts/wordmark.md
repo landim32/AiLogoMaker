@@ -1,34 +1,34 @@
-# Wordmark (Logotipo Tipográfico)
+# Wordmark (Typographic Logo)
 
-## Descrição
-Um wordmark é uma logomarca baseada exclusivamente em tipografia, onde o nome da marca é estilizado de forma única e memorável. Exemplos: Google, Coca-Cola, FedEx, Disney.
+## Description
+A wordmark is a logo based exclusively on typography, where the brand name is styled in a unique and memorable way. Examples: Google, Coca-Cola, FedEx, Disney.
 
-## Diretrizes para o Prompt
+## Prompt Guidelines
 
-### Estrutura
-- O logo deve ser composto APENAS pelo nome da marca em texto estilizado
-- Sem ícones, símbolos ou elementos gráficos separados
-- O texto É o logo
+### Structure
+- The logo must be composed ONLY of the styled brand name text
+- No icons, symbols, or separate graphic elements
+- The text IS the logo
 
-### Tipografia
-- Use uma fonte customizada ou fortemente modificada
-- Considere ligaduras personalizadas entre letras
-- Kerning (espaçamento entre letras) deve ser cuidadosamente ajustado
-- Variações de peso (bold, light) podem criar contraste visual
-- Pode incluir serifas personalizadas ou terminais decorativos
+### Typography
+- Use a custom or heavily modified font
+- Consider custom ligatures between letters
+- Kerning (letter spacing) must be carefully adjusted
+- Weight variations (bold, light) can create visual contrast
+- May include custom serifs or decorative terminals
 
-### Composição
-- O texto deve ter equilíbrio visual perfeito
-- Proporções horizontais para máxima legibilidade
-- Linhas de base consistentes (ou intencionalmente quebradas para efeito)
-- Espaço negativo bem definido entre e ao redor das letras
+### Composition
+- The text must have perfect visual balance
+- Horizontal proportions for maximum legibility
+- Consistent baselines (or intentionally broken for effect)
+- Well-defined negative space between and around letters
 
-### Boas Práticas
-- Deve ser legível em tamanhos pequenos
-- Funcionar em uma única cor
-- Ter personalidade distinta que reflita a marca
-- Evitar fontes genéricas ou facilmente reconhecíveis
-- Criar uma forma silhueta reconhecível mesmo sem ler o texto
+### Best Practices
+- Must be legible at small sizes
+- Work in a single color
+- Have a distinct personality reflecting the brand
+- Avoid generic or easily recognizable fonts
+- Create a recognizable silhouette shape even without reading the text
 
-### Instruções para IA
-Crie um wordmark profissional e sofisticado. O texto deve ser o elemento central e único do design. A tipografia deve ser customizada e memorável, não uma fonte padrão. O design deve funcionar perfeitamente em fundo transparente.
+### AI Instructions
+Create a professional and sophisticated wordmark. The text must be the central and sole design element. The typography must be custom and memorable, not a standard font. The design must work perfectly on a transparent background.
