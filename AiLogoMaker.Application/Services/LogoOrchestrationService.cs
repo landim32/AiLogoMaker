@@ -116,9 +116,13 @@ public class LogoOrchestrationService
         string brandName,
         string logoStyle,
         List<string> designRules,
-        string outputDir)
+        string outputDir,
+        string? additionalInstructions = null)
     {
-        var basePrompt = _baseCreator.BuildBasePrompt(userPrompt, brandName, logoStyle, designRules);
+        var effectivePrompt = !string.IsNullOrWhiteSpace(additionalInstructions)
+            ? $"{userPrompt}\n\nAdditional instructions: {additionalInstructions}"
+            : userPrompt;
+        var basePrompt = _baseCreator.BuildBasePrompt(effectivePrompt, brandName, logoStyle, designRules);
         return await _baseCreator.CreateBaseLogoAsync(basePrompt, brandName, outputDir);
     }
 
@@ -131,9 +135,9 @@ public class LogoOrchestrationService
 
     // Step 1.5: Create icon (symbol only, no text)
     public async Task<LogoResult> CreateIconAsync(
-        LogoResult baseLogo, string brandName, string outputDir)
+        LogoResult baseLogo, string brandName, string outputDir, string? additionalInstructions = null)
     {
-        return await _iconService.CreateIconAsync(baseLogo, brandName, outputDir);
+        return await _iconService.CreateIconAsync(baseLogo, brandName, outputDir, additionalInstructions);
     }
 
     // Step 2: Detect format and get missing formats
@@ -142,16 +146,22 @@ public class LogoOrchestrationService
 
     // Step 2: Create a single format variant
     public async Task<LogoResult> CreateFormatVariantAsync(
-        LogoResult baseLogo, LogoFormat targetFormat, string brandName, string outputDir)
+        LogoResult baseLogo, LogoFormat targetFormat, string brandName, string outputDir, string? additionalInstructions = null)
     {
-        return await _formatService.CreateFormatVariantAsync(baseLogo, targetFormat, brandName, outputDir);
+        return await _formatService.CreateFormatVariantAsync(baseLogo, targetFormat, brandName, outputDir, additionalInstructions);
+    }
+
+    // Step 3: Create a white variant (no AI)
+    public LogoResult CreateWhiteVariant(LogoResult lightLogo, string outputDir)
+    {
+        return _darkService.CreateWhiteVariant(lightLogo, outputDir);
     }
 
     // Step 3: Create a single dark variant
     public async Task<LogoResult> CreateDarkVariantAsync(
-        LogoResult lightLogo, string brandName, string outputDir)
+        LogoResult lightLogo, string brandName, string outputDir, string? additionalInstructions = null)
     {
-        return await _darkService.CreateDarkVariantAsync(lightLogo, brandName, outputDir);
+        return await _darkService.CreateDarkVariantAsync(lightLogo, brandName, outputDir, additionalInstructions);
     }
 
     // Step 4: Export all sizes

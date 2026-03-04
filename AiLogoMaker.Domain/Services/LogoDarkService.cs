@@ -1,19 +1,75 @@
 using AiLogoMaker.Domain.Interfaces;
 using AiLogoMaker.Domain.Models;
+using Microsoft.Extensions.Logging;
 
 namespace AiLogoMaker.Domain.Services;
 
 public class LogoDarkService
 {
     private readonly IAIAppService _aiService;
+    private readonly ILogger<LogoDarkService> _logger;
 
-    public LogoDarkService(IAIAppService aiService)
+    public LogoDarkService(IAIAppService aiService, ILogger<LogoDarkService> logger)
     {
         _aiService = aiService;
+        _logger = logger;
+    }
+
+    public LogoResult CreateWhiteVariant(LogoResult sourceLogo, string outputDir)
+    {
+        var originalsDir = Path.Combine(outputDir, "originals");
+        Directory.CreateDirectory(originalsDir);
+
+        var darkFileName = sourceLogo.Variant switch
+        {
+            LogoVariant.Icon => sourceLogo.Name.Replace("-icon.", "-icon-dark."),
+            LogoVariant.Square => sourceLogo.Name.Replace("-base.", "-base-dark."),
+            _ => sourceLogo.Name.Replace("-light.", "-dark.")
+        };
+        var darkVariant = sourceLogo.Variant switch
+        {
+            LogoVariant.HorizontalLight => LogoVariant.HorizontalDark,
+            LogoVariant.VerticalLight => LogoVariant.VerticalDark,
+            LogoVariant.Icon => LogoVariant.IconDark,
+            _ => LogoVariant.VerticalDark
+        };
+
+        var filePath = Path.Combine(originalsDir, darkFileName);
+
+        using var image = SixLabors.ImageSharp.Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba32>(sourceLogo.FilePath);
+        image.ProcessPixelRows(accessor =>
+        {
+            for (var y = 0; y < accessor.Height; y++)
+            {
+                var row = accessor.GetRowSpan(y);
+                for (var x = 0; x < row.Length; x++)
+                {
+                    ref var pixel = ref row[x];
+                    if (pixel.A > 0)
+                    {
+                        pixel.R = 255;
+                        pixel.G = 255;
+                        pixel.B = 255;
+                    }
+                }
+            }
+        });
+        using var fs = File.Create(filePath);
+        image.Save(fs, new SixLabors.ImageSharp.Formats.Png.PngEncoder());
+
+        _logger.LogInformation("[White Variant - {FileName}] Created from {Source} (no AI)", darkFileName, sourceLogo.Name);
+
+        return new LogoResult
+        {
+            Name = darkFileName,
+            FilePath = filePath,
+            Variant = darkVariant,
+            Prompt = "White variant (pixel conversion, no AI)"
+        };
     }
 
     public async Task<LogoResult> CreateDarkVariantAsync(
-        LogoResult sourceLogo, string brandName, string outputDir)
+        LogoResult sourceLogo, string brandName, string outputDir, string? additionalInstructions = null)
     {
         var originalsDir = Path.Combine(outputDir, "originals");
         Directory.CreateDirectory(originalsDir);
@@ -38,8 +94,12 @@ public class LogoDarkService
         var prompt = sourceLogo.Variant == LogoVariant.Icon
             ? BuildIconDarkPrompt(brandName)
             : BuildDarkPrompt(brandName);
-        var filePath = Path.Combine(originalsDir, darkFileName);
+        if (!string.IsNullOrWhiteSpace(additionalInstructions))
+            prompt += $"\n\nADDITIONAL CLIENT INSTRUCTIONS:\n{additionalInstructions}";
 
+        _logger.LogInformation("[Dark Variant - {FileName}] Prompt used:\n{Prompt}", darkFileName, prompt);
+
+        var filePath = Path.Combine(originalsDir, darkFileName);
         var imageBytes = await _aiService.EditImageAsync(sourceLogo.FilePath, prompt, size);
         await File.WriteAllBytesAsync(filePath, imageBytes);
 

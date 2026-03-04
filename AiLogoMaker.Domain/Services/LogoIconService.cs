@@ -1,26 +1,33 @@
 using AiLogoMaker.Domain.Interfaces;
 using AiLogoMaker.Domain.Models;
+using Microsoft.Extensions.Logging;
 
 namespace AiLogoMaker.Domain.Services;
 
 public class LogoIconService
 {
     private readonly IAIAppService _aiService;
+    private readonly ILogger<LogoIconService> _logger;
 
-    public LogoIconService(IAIAppService aiService)
+    public LogoIconService(IAIAppService aiService, ILogger<LogoIconService> logger)
     {
         _aiService = aiService;
+        _logger = logger;
     }
 
     public async Task<LogoResult> CreateIconAsync(
-        LogoResult baseLogo, string brandName, string outputDir)
+        LogoResult baseLogo, string brandName, string outputDir, string? additionalInstructions = null)
     {
         var originalsDir = Path.Combine(outputDir, "originals");
         Directory.CreateDirectory(originalsDir);
 
         var prompt = BuildIconPrompt(brandName);
+        if (!string.IsNullOrWhiteSpace(additionalInstructions))
+            prompt += $"\n\nADDITIONAL CLIENT INSTRUCTIONS:\n{additionalInstructions}";
         var fileName = "logo-icon.png";
         var filePath = Path.Combine(originalsDir, fileName);
+
+        _logger.LogInformation("[Icon] Prompt used:\n{Prompt}", prompt);
 
         var imageBytes = await _aiService.EditImageAsync(baseLogo.FilePath, prompt, "1024x1024");
         await File.WriteAllBytesAsync(filePath, imageBytes);

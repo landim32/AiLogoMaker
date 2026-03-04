@@ -1,15 +1,18 @@
 using AiLogoMaker.Domain.Interfaces;
 using AiLogoMaker.Domain.Models;
+using Microsoft.Extensions.Logging;
 
 namespace AiLogoMaker.Domain.Services;
 
 public class LogoFormatService
 {
     private readonly IAIAppService _aiService;
+    private readonly ILogger<LogoFormatService> _logger;
 
-    public LogoFormatService(IAIAppService aiService)
+    public LogoFormatService(IAIAppService aiService, ILogger<LogoFormatService> logger)
     {
         _aiService = aiService;
+        _logger = logger;
     }
 
     public LogoFormat DetectFormat(string imagePath)
@@ -30,7 +33,7 @@ public class LogoFormatService
     }
 
     public async Task<LogoResult> CreateFormatVariantAsync(
-        LogoResult sourceLogo, LogoFormat targetFormat, string brandName, string outputDir)
+        LogoResult sourceLogo, LogoFormat targetFormat, string brandName, string outputDir, string? additionalInstructions = null)
     {
         var originalsDir = Path.Combine(outputDir, "originals");
         Directory.CreateDirectory(originalsDir);
@@ -54,6 +57,11 @@ public class LogoFormatService
                 LogoVariant.Square),
             _ => throw new ArgumentOutOfRangeException(nameof(targetFormat))
         };
+
+        if (!string.IsNullOrWhiteSpace(additionalInstructions))
+            prompt += $"\n\nADDITIONAL CLIENT INSTRUCTIONS:\n{additionalInstructions}";
+
+        _logger.LogInformation("[Format Variant - {Format}] Prompt used:\n{Prompt}", targetFormat, prompt);
 
         var filePath = Path.Combine(originalsDir, fileName);
         var imageBytes = await _aiService.EditImageAsync(sourceLogo.FilePath, prompt, size);

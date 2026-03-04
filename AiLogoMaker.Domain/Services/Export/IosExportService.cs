@@ -17,14 +17,16 @@ public class IosExportService
         var squareLogo = logos.FirstOrDefault(l => l.Variant == LogoVariant.Square);
         if (squareLogo == null) return;
 
+        var verticalLight = logos.FirstOrDefault(l => l.Variant == LogoVariant.VerticalLight);
         var verticalDark = logos.FirstOrDefault(l => l.Variant == LogoVariant.VerticalDark);
 
         await _resizeService.ExportResizedAsync(squareLogo.FilePath, ExportPresets.GetIosIcons(outputDir));
         await _resizeService.GenerateContentsJsonAsync(outputDir);
 
-        await _resizeService.ExportSplashAsync(squareLogo.FilePath, ExportPresets.GetIosSplash(outputDir, isDark: false), isDark: false);
+        var splashLightSource = verticalLight ?? squareLogo;
+        await _resizeService.ExportSplashAsync(splashLightSource.FilePath, ExportPresets.GetIosSplash(outputDir, isDark: false), isDark: false);
 
         if (verticalDark != null)
-            await _resizeService.ExportSplashAsync(squareLogo.FilePath, ExportPresets.GetIosSplash(outputDir, isDark: true), isDark: true);
+            await _resizeService.ExportSplashAsync(verticalDark.FilePath, ExportPresets.GetIosSplash(outputDir, isDark: true), isDark: true);
     }
 }

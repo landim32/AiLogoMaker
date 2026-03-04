@@ -94,149 +94,9 @@ if (isResuming)
     selectedRules = session.SelectedRules;
     outputDir = session.OutputDirectory;
 
-    // -------------------------------------------------------
-    // Verify ALL expected images and generate missing ones
-    // -------------------------------------------------------
-    Console.WriteLine("\n  Verifying session files...\n");
-    var step = session.CurrentStep;
-    var missingCount = 0;
-
-    // Helper: check if image exists in session with file on disk
-    bool ImageReady(string imageId)
-    {
-        var img = sessionManager.GetImage(imageId);
-        return img is { Status: ImageApprovalStatus.Approved } && File.Exists(img.FilePath);
-    }
-
-    // Helper: generate and register image
-    async Task RegenerateAndApprove(string imageId, LogoResult result)
-    {
-        await sessionManager.RecordImageGeneratedAsync(imageId, result.Name, result.FilePath, result.Variant, result.Prompt, "regenerated");
-        await sessionManager.SetImageStatusAsync(imageId, ImageApprovalStatus.Approved);
-        missingCount++;
-    }
-
-    // --- Base logo (required for everything) ---
-    if (step > SessionStep.BaseLogo && !ImageReady("base"))
-    {
-        Console.WriteLine("  Generating missing: base logo...");
-        var result = await orchestrator.CreateBaseLogoAsync(userPrompt, brandName, selectedStyle, selectedRules, outputDir);
-        await RegenerateAndApprove("base", result);
-    }
-
-    // --- Icon (required from IconLogo step onwards) ---
-    if (step > SessionStep.IconLogo && !ImageReady("icon"))
-    {
-        var baseImg = sessionManager.GetImage("base");
-        if (baseImg != null && File.Exists(baseImg.FilePath))
-        {
-            Console.WriteLine("  Generating missing: icon...");
-            var baseLogo = SessionManager.ToLogoResult(baseImg);
-            var result = await orchestrator.CreateIconAsync(baseLogo, brandName, outputDir);
-            await RegenerateAndApprove("icon", result);
-        }
-    }
-
-    // --- Format variants (required from FormatVariants step onwards) ---
-    if (step > SessionStep.FormatVariants)
-    {
-        var baseImg = sessionManager.GetImage("base");
-        if (baseImg != null && File.Exists(baseImg.FilePath))
-        {
-            var baseLogo = SessionManager.ToLogoResult(baseImg);
-            var srcFormat = orchestrator.DetectFormat(baseLogo.FilePath);
-            var neededFormats = orchestrator.GetMissingFormats(srcFormat);
-
-            foreach (var fmt in neededFormats)
-            {
-                var imageId = fmt switch
-                {
-                    LogoFormat.Horizontal => "horizontal-light",
-                    LogoFormat.Vertical => "vertical-light",
-                    LogoFormat.Square => "square-light",
-                    _ => throw new ArgumentOutOfRangeException()
-                };
-
-                if (!ImageReady(imageId))
-                {
-                    Console.WriteLine($"  Generating missing: {imageId}...");
-                    var result = await orchestrator.CreateFormatVariantAsync(baseLogo, fmt, brandName, outputDir);
-                    await RegenerateAndApprove(imageId, result);
-                }
-            }
-        }
-    }
-
-    // --- Dark variants (required from DarkVariants step onwards) ---
-    if (step > SessionStep.DarkVariants)
-    {
-        var darkMapping = new Dictionary<string, string>
-        {
-            ["base"] = "base-dark",
-            ["icon"] = "icon-dark",
-            ["horizontal-light"] = "horizontal-dark",
-            ["vertical-light"] = "vertical-dark",
-            ["square-light"] = "square-dark"
-        };
-
-        foreach (var (lightId, darkId) in darkMapping)
-        {
-            if (!ImageReady(lightId)) continue; // no light source, skip dark
-            if (ImageReady(darkId)) continue;   // dark already exists
-
-            Console.WriteLine($"  Generating missing: {darkId}...");
-            var lightImg = sessionManager.GetImage(lightId)!;
-            var lightLogo = SessionManager.ToLogoResult(lightImg);
-            var result = await orchestrator.CreateDarkVariantAsync(lightLogo, brandName, outputDir);
-            await RegenerateAndApprove(darkId, result);
-        }
-    }
-
-    // --- Prompt files (required after Export/Completed) ---
-    if (step >= SessionStep.Export)
-    {
-        var missingPrompts = orchestrator.GetMissingPromptFiles(outputDir);
-        if (missingPrompts.Count > 0)
-        {
-            foreach (var f in missingPrompts)
-                Console.WriteLine($"  Generating missing: {f}...");
-
-            var approvedForPrompts = sessionManager.Current.Images
-                .Where(i => i.Status == ImageApprovalStatus.Approved)
-                .ToList();
-            var logosForPrompts = SessionManager.ToLogoResults(approvedForPrompts);
-            await orchestrator.GenerateMissingPromptsAsync(brandName, userPrompt, logosForPrompts, outputDir);
-            missingCount += missingPrompts.Count;
-        }
-    }
-
-    if (missingCount > 0)
-        Console.WriteLine($"\n  {missingCount} missing file(s) regenerated.\n");
-    else
-        Console.WriteLine("  All files verified.\n");
-
-    // Jump to the current step
-    var targetStep = step;
-    // If step is past IconLogo but icon was never created, go to icon step
-    if (targetStep >= SessionStep.FormatVariants && !ImageReady("icon"))
-        targetStep = SessionStep.IconLogo;
-
-    if (targetStep == SessionStep.Completed)
-    {
-        Console.WriteLine("  This session is already completed.");
-        Console.WriteLine($"  Output: {outputDir}");
-        return;
-    }
-
-    switch (targetStep)
-    {
-        case SessionStep.BaseLogo: goto step1;
-        case SessionStep.IconLogo: goto stepIcon;
-        case SessionStep.FormatVariants: goto step2;
-        case SessionStep.DarkVariants: goto step3;
-        case SessionStep.Export: goto step4;
-        default: return;
-    }
+    // Resuming session — always run all steps from the beginning.
+    // Each step checks if the file exists on disk; if not, generates it.
+    // Every image (existing or newly generated) goes through the approval prompt.
 }
 else
 {
@@ -289,31 +149,45 @@ step1:
 
 Console.WriteLine("\n--- STEP 1: Base Logo ---");
 
-while (true)
 {
-    selectedStyle = orchestrator.GetAvailableStyles()[Random.Shared.Next(orchestrator.GetAvailableStyles().Count)];
-    Console.WriteLine($"\n  Creating base logo (style: {selectedStyle})...\n");
-
-    LogoResult baseLogo;
-    try
+    var existingBase = sessionManager.GetImage("base");
+    if (existingBase != null && File.Exists(existingBase.FilePath))
     {
-        baseLogo = await orchestrator.CreateBaseLogoAsync(userPrompt, brandName, selectedStyle, selectedRules, outputDir);
+        Console.WriteLine($"  Base logo already exists: {existingBase.FilePath}");
+        await sessionManager.SetImageStatusAsync("base", ImageApprovalStatus.Approved);
     }
-    catch (Exception ex)
+    else
     {
-        Console.WriteLine($"\n  ERROR: {ex.Message}");
-        return;
+        while (true)
+        {
+            Console.WriteLine("\n  Additional instructions for base logo (press ENTER to skip):");
+            Console.Write("  > ");
+            var extraPrompt = Console.ReadLine()?.Trim();
+
+            selectedStyle = orchestrator.GetAvailableStyles()[Random.Shared.Next(orchestrator.GetAvailableStyles().Count)];
+            Console.WriteLine($"\n  Creating base logo (style: {selectedStyle})...\n");
+
+            LogoResult baseLogo;
+            try
+            {
+                baseLogo = await orchestrator.CreateBaseLogoAsync(userPrompt, brandName, selectedStyle, selectedRules, outputDir, extraPrompt);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"\n  ERROR: {ex.Message}");
+                return;
+            }
+
+            await sessionManager.RecordImageGeneratedAsync("base", baseLogo.Name, baseLogo.FilePath, baseLogo.Variant, baseLogo.Prompt);
+            Console.WriteLine($"  Base logo created: {baseLogo.FilePath}");
+            OpenFile(baseLogo.FilePath);
+
+            var decision = await HandleImageApproval("base", baseLogo, brandName, orchestrator, sessionManager);
+            if (decision == "cancelled") return;
+            if (decision == "approved") break;
+            Console.WriteLine("\n  Generating a new logo...");
+        }
     }
-
-    await sessionManager.RecordImageGeneratedAsync("base", baseLogo.Name, baseLogo.FilePath, baseLogo.Variant, baseLogo.Prompt);
-    Console.WriteLine($"  Base logo created: {baseLogo.FilePath}");
-    OpenFile(baseLogo.FilePath);
-
-    var decision = await HandleImageApproval("base", baseLogo, brandName, orchestrator, sessionManager);
-    if (decision == "cancelled") return;
-    if (decision == "approved") break;
-    // decision == "rejected" → loop to generate new
-    Console.WriteLine("\n  Generating a new logo...");
 }
 
 await sessionManager.AdvanceStepAsync(SessionStep.IconLogo);
@@ -329,35 +203,26 @@ Console.WriteLine("\n--- STEP 1.5: Icon (Symbol Only) ---");
     var baseImageForIcon = sessionManager.GetImage("base")!;
     var baseLogoForIcon = SessionManager.ToLogoResult(baseImageForIcon);
 
-    // Skip if already approved in a resumed session
     var existingIcon = sessionManager.GetImage("icon");
-    if (existingIcon is { Status: ImageApprovalStatus.Approved } && File.Exists(existingIcon.FilePath))
+    if (existingIcon != null && File.Exists(existingIcon.FilePath))
     {
-        Console.WriteLine("\n  Icon already approved, skipping.");
+        Console.WriteLine($"  Icon already exists: {existingIcon.FilePath}");
+        await sessionManager.SetImageStatusAsync("icon", ImageApprovalStatus.Approved);
     }
     else
     {
-        // If icon exists on disk (pending from a previous run), show it for approval first
-        if (existingIcon != null && File.Exists(existingIcon.FilePath))
-        {
-            Console.WriteLine("\n  Found existing icon from previous run.");
-            var existingLogo = SessionManager.ToLogoResult(existingIcon);
-            OpenFile(existingLogo.FilePath);
-
-            var existDecision = await HandleImageApproval("icon", existingLogo, brandName, orchestrator, sessionManager);
-            if (existDecision == "cancelled") return;
-            if (existDecision == "approved") goto iconDone;
-            // rejected → fall through to regenerate
-        }
-
         while (true)
         {
+            Console.WriteLine("\n  Additional instructions for icon (press ENTER to skip):");
+            Console.Write("  > ");
+            var extraPrompt = Console.ReadLine()?.Trim();
+
             Console.WriteLine("\n  Creating icon (symbol only, no text)...\n");
 
             LogoResult iconLogo;
             try
             {
-                iconLogo = await orchestrator.CreateIconAsync(baseLogoForIcon, brandName, outputDir);
+                iconLogo = await orchestrator.CreateIconAsync(baseLogoForIcon, brandName, outputDir, extraPrompt);
             }
             catch (Exception ex)
             {
@@ -372,11 +237,9 @@ Console.WriteLine("\n--- STEP 1.5: Icon (Symbol Only) ---");
             var decision = await HandleImageApproval("icon", iconLogo, brandName, orchestrator, sessionManager);
             if (decision == "cancelled") return;
             if (decision == "approved") break;
-            // decision == "rejected" → loop to generate new icon
             Console.WriteLine("\n  Generating a new icon...");
         }
     }
-    iconDone:;
 }
 
 await sessionManager.AdvanceStepAsync(SessionStep.FormatVariants);
@@ -403,35 +266,26 @@ foreach (var format in missingFormats2)
         _ => throw new ArgumentOutOfRangeException()
     };
 
-    // Skip if already approved in a resumed session
     var existingImg = sessionManager.GetImage(imageId);
-    if (existingImg is { Status: ImageApprovalStatus.Approved } && File.Exists(existingImg.FilePath))
-    {
-        Console.WriteLine($"\n  {imageId} already approved, skipping.");
-        continue;
-    }
-
-    // If image exists on disk (pending from a previous run), show it for approval first
     if (existingImg != null && File.Exists(existingImg.FilePath))
     {
-        Console.WriteLine($"\n  Found existing {imageId} from previous run.");
-        var existingLogo = SessionManager.ToLogoResult(existingImg);
-        OpenFile(existingLogo.FilePath);
-
-        var decision = await HandleImageApproval(imageId, existingLogo, brandName, orchestrator, sessionManager);
-        if (decision == "cancelled") return;
-        if (decision == "approved") continue;
-        // decision == "rejected" → fall through to regenerate
+        Console.WriteLine($"  {imageId} already exists: {existingImg.FilePath}");
+        await sessionManager.SetImageStatusAsync(imageId, ImageApprovalStatus.Approved);
+        continue;
     }
 
     while (true)
     {
+        Console.WriteLine($"\n  Additional instructions for {format} variant (press ENTER to skip):");
+        Console.Write("  > ");
+        var extraPrompt = Console.ReadLine()?.Trim();
+
         Console.WriteLine($"\n  Creating {format} variant...\n");
 
         LogoResult variant;
         try
         {
-            variant = await orchestrator.CreateFormatVariantAsync(baseLogoForVariants, format, brandName, outputDir);
+            variant = await orchestrator.CreateFormatVariantAsync(baseLogoForVariants, format, brandName, outputDir, extraPrompt);
         }
         catch (Exception ex)
         {
@@ -446,7 +300,6 @@ foreach (var format in missingFormats2)
         var decision = await HandleImageApproval(imageId, variant, brandName, orchestrator, sessionManager);
         if (decision == "cancelled") return;
         if (decision == "approved") break;
-        // decision == "rejected" → loop to regenerate this variant
         Console.WriteLine($"\n  Regenerating {format} variant...");
     }
 }
@@ -460,50 +313,56 @@ step3:
 
 Console.WriteLine("\n--- STEP 3: Dark Variants ---");
 
-// Collect all approved light images (including icon)
+// Collect all light images that have files on disk (regardless of status)
 var lightImageIds = new[] { "base", "icon", "horizontal-light", "vertical-light", "square-light" };
-var approvedLights = sessionManager.GetApprovedImagesByIds(lightImageIds);
+var lightImages = lightImageIds
+    .Select(id => sessionManager.GetImage(id))
+    .Where(img => img != null && File.Exists(img.FilePath))
+    .ToList();
 
-foreach (var lightImg in approvedLights)
+foreach (var lightImg in lightImages)
 {
-    var darkImageId = lightImg.ImageId switch
+    var darkImageId = lightImg!.ImageId switch
     {
         "base" => "base-dark",
         "icon" => "icon-dark",
         _ => lightImg.ImageId.Replace("-light", "-dark")
     };
 
-    // Skip if already approved in a resumed session
     var existingDark = sessionManager.GetImage(darkImageId);
-    if (existingDark is { Status: ImageApprovalStatus.Approved } && File.Exists(existingDark.FilePath))
-    {
-        Console.WriteLine($"\n  {darkImageId} already approved, skipping.");
-        continue;
-    }
-
-    // If image exists on disk (pending from a previous run), show it for approval first
     if (existingDark != null && File.Exists(existingDark.FilePath))
     {
-        Console.WriteLine($"\n  Found existing {darkImageId} from previous run.");
-        var existingLogo = SessionManager.ToLogoResult(existingDark);
-        OpenFile(existingLogo.FilePath);
-
-        var decision = await HandleImageApproval(darkImageId, existingLogo, brandName, orchestrator, sessionManager);
-        if (decision == "cancelled") return;
-        if (decision == "approved") continue;
-        // decision == "rejected" → fall through to regenerate
+        Console.WriteLine($"  {darkImageId} already exists: {existingDark.FilePath}");
+        await sessionManager.SetImageStatusAsync(darkImageId, ImageApprovalStatus.Approved);
+        continue;
     }
 
     var lightLogo = SessionManager.ToLogoResult(lightImg);
 
+    // First attempt: white variant (no AI)
+    Console.WriteLine($"\n  Creating white variant for {lightImg.ImageId} (no AI)...");
+    var whiteVariant = orchestrator.CreateWhiteVariant(lightLogo, outputDir);
+    await sessionManager.RecordImageGeneratedAsync(darkImageId, whiteVariant.Name, whiteVariant.FilePath, whiteVariant.Variant, whiteVariant.Prompt);
+    Console.WriteLine($"  White variant created: {whiteVariant.FilePath}");
+    OpenFile(whiteVariant.FilePath);
+
+    var whiteDecision = await HandleImageApproval(darkImageId, whiteVariant, brandName, orchestrator, sessionManager);
+    if (whiteDecision == "cancelled") return;
+    if (whiteDecision == "approved") continue;
+
+    // Rejected: fall through to AI generation
     while (true)
     {
-        Console.WriteLine($"\n  Creating dark variant for {lightImg.ImageId}...\n");
+        Console.WriteLine($"\n  Additional instructions for {darkImageId} (press ENTER to skip):");
+        Console.Write("  > ");
+        var extraPrompt = Console.ReadLine()?.Trim();
+
+        Console.WriteLine($"\n  Creating dark variant for {lightImg.ImageId} (AI)...\n");
 
         LogoResult darkVariant;
         try
         {
-            darkVariant = await orchestrator.CreateDarkVariantAsync(lightLogo, brandName, outputDir);
+            darkVariant = await orchestrator.CreateDarkVariantAsync(lightLogo, brandName, outputDir, extraPrompt);
         }
         catch (Exception ex)
         {
@@ -518,7 +377,6 @@ foreach (var lightImg in approvedLights)
         var decision = await HandleImageApproval(darkImageId, darkVariant, brandName, orchestrator, sessionManager);
         if (decision == "cancelled") return;
         if (decision == "approved") break;
-        // decision == "rejected" → loop to regenerate this dark variant
         Console.WriteLine($"\n  Regenerating dark variant for {lightImg.ImageId}...");
     }
 }

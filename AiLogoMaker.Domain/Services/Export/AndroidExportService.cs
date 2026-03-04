@@ -17,14 +17,16 @@ public class AndroidExportService
         var squareLogo = logos.FirstOrDefault(l => l.Variant == LogoVariant.Square);
         if (squareLogo == null) return;
 
-        var horizontalDark = logos.FirstOrDefault(l => l.Variant == LogoVariant.HorizontalDark);
+        var verticalLight = logos.FirstOrDefault(l => l.Variant == LogoVariant.VerticalLight);
+        var verticalDark = logos.FirstOrDefault(l => l.Variant == LogoVariant.VerticalDark);
 
         await _resizeService.ExportResizedAsync(squareLogo.FilePath, ExportPresets.GetAndroidIcons(outputDir));
         await _resizeService.ExportResizedAsync(squareLogo.FilePath, ExportPresets.GetAndroidAdaptiveIcons(outputDir));
 
-        await _resizeService.ExportSplashAsync(squareLogo.FilePath, ExportPresets.GetAndroidSplash(outputDir, isDark: false), isDark: false);
+        var splashLightSource = verticalLight ?? squareLogo;
+        await _resizeService.ExportSplashAsync(splashLightSource.FilePath, ExportPresets.GetAndroidSplash(outputDir, isDark: false), isDark: false);
 
-        if (horizontalDark != null)
-            await _resizeService.ExportSplashAsync(squareLogo.FilePath, ExportPresets.GetAndroidSplash(outputDir, isDark: true), isDark: true);
+        if (verticalDark != null)
+            await _resizeService.ExportSplashAsync(verticalDark.FilePath, ExportPresets.GetAndroidSplash(outputDir, isDark: true), isDark: true);
     }
 }
