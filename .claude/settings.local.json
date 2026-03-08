@@ -12,7 +12,9 @@
       "Bash(mv:*)",
       "Bash(xargs grep -i \"outputformat\\\\|ResponseFormat\\\\|output_format\")",
       "Bash(xargs grep:*)",
-      "Bash(xargs dotnet-script:*)"
+      "Bash(xargs dotnet-script:*)",
+      "Bash(git:*)",
+      "Bash(grep:*)"
     ]
   }
 }

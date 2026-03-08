@@ -118,6 +118,11 @@ else
         return;
     }
 
+    // --- Optional: provide an existing logo ---
+    Console.WriteLine("\nDo you have an existing logo to use as the base? (leave empty to generate with AI)");
+    Console.Write("Logo file path: ");
+    var existingLogoPath = Console.ReadLine()?.Trim().Trim('"');
+
     var styles = orchestrator.GetAvailableStyles();
     var rules = orchestrator.GetAvailableRules();
     selectedStyle = styles[Random.Shared.Next(styles.Count)];
@@ -128,6 +133,28 @@ else
     Directory.CreateDirectory(outputDir);
 
     await sessionManager.CreateNewSessionAsync(brandName, userPrompt, outputDir, selectedStyle, selectedRules);
+
+    // If user provided an existing logo, copy it and register as approved base
+    if (!string.IsNullOrWhiteSpace(existingLogoPath))
+    {
+        if (!File.Exists(existingLogoPath))
+        {
+            Console.WriteLine($"ERROR: File not found: {existingLogoPath}");
+            return;
+        }
+
+        var originalsDir = Path.Combine(outputDir, "originals");
+        Directory.CreateDirectory(originalsDir);
+        var extension = Path.GetExtension(existingLogoPath);
+        var destPath = Path.Combine(originalsDir, $"{brandName.ToLower().Replace(" ", "-")}-base{extension}");
+        File.Copy(existingLogoPath, destPath, overwrite: true);
+
+        await sessionManager.RecordImageGeneratedAsync("base", Path.GetFileName(destPath), destPath, LogoVariant.Square, "user-provided");
+        await sessionManager.SetImageStatusAsync("base", ImageApprovalStatus.Approved);
+        await sessionManager.AdvanceStepAsync(SessionStep.IconLogo);
+
+        Console.WriteLine($"\n  Base logo imported: {destPath}");
+    }
 
     Console.WriteLine("\n========================================");
     Console.WriteLine("  GENERATION SUMMARY");
